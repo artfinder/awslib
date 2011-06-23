@@ -31,7 +31,7 @@ def upload_directory_to_bucket(base, dirname, bucket, bucketprefix):
             upload_file_to_bucket(base, fname, bucket, bucketprefix)
 
 
-def upload_file_to_bucket_by_name(base, fname, bucketname, bucketprefix='', public=True):
+def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True):
     "Upload a single file to S3."
     
     aws_access_key = os.environ['AWS_ACCESS_KEY']
@@ -39,10 +39,10 @@ def upload_file_to_bucket_by_name(base, fname, bucketname, bucketprefix='', publ
     
     s3     = S3Connection(aws_access_key, aws_secret_key)
     bucket = s3.create_bucket(bucketname)
-    upload_file_to_bucket(base, fname, bucket, bucketprefix, public)
+    upload_file_to_bucket(base, fname, bucket, keyname, bucketprefix, public)
 
 
-def upload_file_to_bucket(base, fname, bucket, bucketprefix='', public=True):
+def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', public=True):
     "Upload a single file to S3."
     
     TTL = 31536000      # one year
@@ -51,7 +51,10 @@ def upload_file_to_bucket(base, fname, bucket, bucketprefix='', public=True):
     while True:
         try:
             k = Key(bucket)
-            k.key = os.path.join(bucketprefix, fname)
+            if keyname is None:
+                k.key = os.path.join(bucketprefix, fname)
+            else:
+                k.key = keyname
             k.set_contents_from_filename(
                 os.path.join(base, fname),
                 replace=False,
