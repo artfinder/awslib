@@ -1,4 +1,6 @@
 import os
+import sys
+import time
 import boto.ec2.connection
 import boto.ec2.elb
 import boto.ec2
@@ -64,6 +66,15 @@ def flip_elb_to(elb_name, instance_ids):
     bh = elbc.get_all_load_balancers(elb_name)[0]
     old_instance_ids = map(lambda x: x.id, bh.instances)
     bh.register_instances(instance_ids)
+    while True:
+        ih = elbc.describe_instance_health(
+            elb_name,
+            instances=instance_ids
+            )
+        if len(filter(lambda x: x.state!=u'InService', ih))==0:
+            break
+        # this usually takes 10-15 seconds minimum
+        time.sleep(5)
     bh.deregister_instances(old_instance_ids)
     return old_instance_ids
 
