@@ -18,7 +18,7 @@ def upload_directory_to_bucket_by_name(base, dirname, bucketname, bucketprefix='
     aws_secret_key = os.environ['AWS_SECRET_KEY']
     
     s3     = S3Connection(aws_access_key, aws_secret_key)
-    bucket = s3.create_bucket(bucketname)
+    bucket = s3.get_bucket(bucketname)
     upload_directory_to_bucket(base, dirname, bucket, bucketprefix)
 
 
@@ -31,14 +31,16 @@ def upload_directory_to_bucket(base, dirname, bucket, bucketprefix):
             upload_file_to_bucket(base, fname, bucket, bucketprefix)
 
 
-def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True):
+def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True, aws_access_key=None, aws_secret_key=None):
     "Upload a single file to S3."
     
-    aws_access_key = os.environ['AWS_ACCESS_KEY']
-    aws_secret_key = os.environ['AWS_SECRET_KEY']
+    if aws_access_key is None:
+        aws_access_key = os.environ['AWS_ACCESS_KEY']
+    if aws_secret_key is None:
+        aws_secret_key = os.environ['AWS_SECRET_KEY']
     
     s3     = S3Connection(aws_access_key, aws_secret_key)
-    bucket = s3.create_bucket(bucketname)
+    bucket = s3.get_bucket(bucketname)
     upload_file_to_bucket(base, fname, bucket, keyname, bucketprefix, public)
 
 
