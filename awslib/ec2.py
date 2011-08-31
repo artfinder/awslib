@@ -9,9 +9,9 @@ import boto.ec2
 
 def connection(aws_access_key_id, aws_secret_access_key, region=None):
     if region:
-        ec2c = boto.ec2.connect_to_region(region, aws_access_key_id=env.access_key_id, aws_secret_access_key=env.secret_access_key)
+        ec2c = boto.ec2.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
     else:
-        ec2c = boto.ec2.connection.EC2Connection(aws_access_key, aws_secret_key)
+        ec2c = boto.ec2.connection.EC2Connection(aws_access_key_id, aws_secret_access_key)
     return ec2c
 
 def instances_from_security_group(
@@ -25,7 +25,7 @@ def instances_from_security_group(
     if aws_secret_key is None:
         aws_secret_key = os.environ['AWS_SECRET_KEY']
 
-    ec2c = connection(access_key_id, secret_access_key, region)
+    ec2c = connection(aws_access_key, aws_secret_key, region)
     sg   = ec2c.get_all_security_groups( groupnames=[group_name] )[0]
     return sg.instances()
 
@@ -66,7 +66,7 @@ def flip_elb_to(elb_name, instance_ids, instance_check=None, region=None):
     
     aws_access_key = os.environ['AWS_ACCESS_KEY']
     aws_secret_key = os.environ['AWS_SECRET_KEY']
-    ec2c = connection(access_key_id, secret_access_key, region)
+    ec2c = connection(aws_access_key, aws_secret_key, region)
     elbc = boto.ec2.elb.ELBConnection(aws_access_key, aws_secret_key, region=ec2c.region)
     bh = elbc.get_all_load_balancers(elb_name)[0]
     old_instance_ids = map(lambda x: x.id, bh.instances)
@@ -109,7 +109,7 @@ def hosts_from_elb(elb_name, region=None):
     aws_access_key = os.environ['AWS_ACCESS_KEY']
     aws_secret_key = os.environ['AWS_SECRET_KEY']
 
-    ec2c = connection(access_key_id, secret_access_key, region)
+    ec2c = connection(aws_access_key, aws_secret_key, region)
     elbc = boto.ec2.elb.ELBConnection(aws_access_key, aws_secret_key, region=ec2c.region)
     bh = elbc.get_all_load_balancers(elb_name)[0]
     rs = ec2c.get_all_instances(instance_ids=map(lambda x:x.id, bh.instances))
@@ -126,7 +126,7 @@ def hosts_by_instance_id(ids, region=None):
     aws_access_key = os.environ['AWS_ACCESS_KEY']
     aws_secret_key = os.environ['AWS_SECRET_KEY']
 
-    ec2c = connection(access_key_id, secret_access_key, region)
+    ec2c = connection(aws_access_key, aws_secret_key, region)
     reservations = ec2c.get_all_instances(ids.split('|'))
     hosts = []
     for r in reservations:
