@@ -4,6 +4,7 @@ import time
 import boto.ec2.connection
 import boto.ec2.elb
 import boto.ec2
+import boto.utils
 
 ### EC2 HOSTLIST QUERIES
 
@@ -13,6 +14,20 @@ def connection(aws_access_key_id, aws_secret_access_key, region=None):
     else:
         ec2c = boto.ec2.connection.EC2Connection(aws_access_key_id, aws_secret_access_key)
     return ec2c
+
+def current_instance(aws_access_key=None, aws_secret_key=None, region=None):
+    if aws_access_key is None:
+        aws_access_key = os.environ['AWS_ACCESS_KEY']
+    if aws_secret_key is None:
+        aws_secret_key = os.environ['AWS_SECRET_KEY']
+
+    current_instance = boto.utils.get_instance_metadata()
+    ec2c = connection(aws_access_key, aws_secret_key, region)
+    reservations = ec2c.get_all_instances([current_instance["instance-id"]])
+    try:
+        return reservations[0].instances[0]
+    except IndexError:
+        return None
 
 def instances_from_security_group(
     group_name,
