@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import boto.ec2.connection
@@ -7,6 +8,19 @@ import boto.ec2
 import boto.utils
 
 ### EC2 HOSTLIST QUERIES
+
+
+def current_region(aws_access_key=None, aws_secret_key=None):
+    if aws_access_key is None:
+        aws_access_key = os.environ['AWS_ACCESS_KEY']
+    if aws_secret_key is None:
+        aws_secret_key = os.environ['AWS_SECRET_KEY']
+
+    instance_metadata = boto.utils.get_instance_metadata()
+    return re.match(
+        "([a-z]*-[a-z]*-\d*)",
+        instance_metadata["placement"]["availability-zone"]).groups()[0]
+
 
 def connection(aws_access_key_id, aws_secret_access_key, region=None):
     if region:
@@ -22,6 +36,9 @@ def current_instance(aws_access_key=None, aws_secret_key=None, region=None):
         aws_secret_key = os.environ['AWS_SECRET_KEY']
 
     current_instance = boto.utils.get_instance_metadata()
+    if region is None:
+        region = current_region(
+            aws_access_key=aws_access_key, aws_secret_key=aws_secret_key)
     ec2c = connection(aws_access_key, aws_secret_key, region)
     reservations = ec2c.get_all_instances([current_instance["instance-id"]])
     try:
