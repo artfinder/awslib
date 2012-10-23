@@ -28,7 +28,8 @@ def upload_directory_to_bucket(base, dirname, bucket, bucketprefix):
         if os.path.isdir(os.path.join(base, fname)):
             upload_directory_to_bucket(base, fname, bucket, bucketprefix)
         else:
-            upload_file_to_bucket(base, fname, bucket, bucketprefix)
+            upload_file_to_bucket(
+                base, fname, bucket, bucketprefix=bucketprefix)
 
 
 def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True, aws_access_key=None, aws_secret_key=None):
@@ -41,7 +42,9 @@ def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketp
     
     s3     = S3Connection(aws_access_key, aws_secret_key)
     bucket = s3.get_bucket(bucketname)
-    upload_file_to_bucket(base, fname, bucket, keyname, bucketprefix, public)
+    upload_file_to_bucket(
+        base, fname, bucket, keyname=keyname, bucketprefix=bucketprefix,
+        public=public)
 
 
 def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', public=True):
