@@ -5,7 +5,7 @@ except ImportError:
     from distutils.core import setup
 
 PACKAGE = 'awslib'
-VERSION = '0.6.4'
+VERSION = '0.6.5'
 
 setup(
     name=PACKAGE, version=VERSION,

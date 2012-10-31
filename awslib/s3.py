@@ -69,10 +69,10 @@ def parallel_upload_directory_to_bucket(base, dirname, bucket, bucketprefix=''):
     def walk_files(path):
         for root, dirs, files in os.walk(path):
             for f in files:
-                yield root, f
+                yield os.path.join(root[len(path):], f)
 
     pool.map(pool_upload,
-            ((root, f, bucket, bucketprefix) for root, f in walk_files(os.path.join(base, dirname))),
+            ((base, f, bucket, bucketprefix) for f in walk_files(os.path.join(base, dirname))),
             10)
 
 def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True, aws_access_key=None, aws_secret_key=None):
