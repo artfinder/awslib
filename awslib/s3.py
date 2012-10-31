@@ -1,6 +1,10 @@
 import os
 import os.path
 import time
+import threading
+import multiprocessing
+import multiprocessing.pool
+
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
@@ -10,6 +14,8 @@ from boto.s3.key import Key
 def upload_directory(dirname, bucketname):
     upload_directory_to_bucket_by_name(dirname, "", bucketname)
 
+def parallel_upload_directory(dirname, bucketname):
+    parallel_upload_directory_to_bucket(dirname, "", bucketname)
 
 def upload_directory_to_bucket_by_name(base, dirname, bucketname, bucketprefix=''):
     "Upload an entire directory to S3."
@@ -22,15 +28,52 @@ def upload_directory_to_bucket_by_name(base, dirname, bucketname, bucketprefix='
     upload_directory_to_bucket(base, dirname, bucket, bucketprefix)
 
 
-def upload_directory_to_bucket(base, dirname, bucket, bucketprefix):
+def upload_directory_to_bucket(base, dirname, bucket, bucketprefix=''):
     for f in os.listdir(os.path.join(base, dirname)):
         fname = os.path.join(dirname, f)
         if os.path.isdir(os.path.join(base, fname)):
             upload_directory_to_bucket(base, fname, bucket, bucketprefix)
         else:
-            upload_file_to_bucket(
-                base, fname, bucket, bucketprefix=bucketprefix)
+            upload_file_to_bucket(base, fname, bucket, bucketprefix=bucketprefix)
 
+def pool_upload(args):
+    bucket_conns = threading.current_thread().local.bucket_conns
+    bucket = bucket_conns[os.getpid()][args[2]]
+    upload_file_to_bucket(args[0], args[1], bucket, bucketprefix=args[3])
+
+def pool_init(bucketname):
+    aws_access_key = os.environ['AWS_ACCESS_KEY']
+    aws_secret_key = os.environ['AWS_SECRET_KEY']
+    
+    s3     = S3Connection(aws_access_key, aws_secret_key)
+    bucket = s3.get_bucket(bucketname)
+   
+    try:    
+        tlocal = threading.current_thread().local
+    except AttributeError:
+        tlocal = threading.current_thread().local = threading.local()
+
+    try:
+        bucket_conns = tlocal.bucket_conns
+    except AttributeError:
+        bucket_conns = tlocal.bucket_conns = {}
+
+    bucket_conns.setdefault(os.getpid(), {})[bucketname] = bucket
+
+def parallel_upload_directory_to_bucket(base, dirname, bucket, bucketprefix=''):
+    pool = multiprocessing.pool.ThreadPool(
+            processes=32,
+            initializer=pool_init,
+            initargs=(bucket,))
+  
+    def walk_files(path):
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                yield root, f
+
+    pool.map(pool_upload,
+            ((root, f, bucket, bucketprefix) for root, f in walk_files(os.path.join(base, dirname))),
+            10)
 
 def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True, aws_access_key=None, aws_secret_key=None):
     "Upload a single file to S3."
