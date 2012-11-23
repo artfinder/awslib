@@ -13,8 +13,8 @@ setup(
     packages=[ 'awslib' ],
     license='MIT',
     author='Art Discovery Ltd',
-    maintainer='James Aylett',
-    maintainer_email='james@tartarus.org',
+    maintainer='Art Discovery Ltd',
+    maintainer_email='tech@artfinder.com',
     install_requires=[
         'boto',
     ],
