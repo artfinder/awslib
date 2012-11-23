@@ -105,7 +105,7 @@ def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', pu
                 k.key = keyname
             k.set_contents_from_filename(
                 os.path.join(base, fname),
-                replace=False,
+                replace=True,
                 headers={
                     'Cache-Control': 'max-age=%s' % TTL
                 },
