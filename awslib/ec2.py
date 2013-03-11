@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import time
 import boto.ec2.connection
 import boto.ec2.elb
