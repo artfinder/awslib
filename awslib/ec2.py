@@ -23,10 +23,14 @@ def current_region(aws_access_key=None, aws_secret_key=None):
 
 def connection(aws_access_key_id, aws_secret_access_key, region=None):
     if region:
-        ec2c = boto.ec2.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+        ec2c = boto.ec2.connect_to_region(
+            region, aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key)
     else:
-        ec2c = boto.ec2.connection.EC2Connection(aws_access_key_id, aws_secret_access_key)
+        ec2c = boto.ec2.connection.EC2Connection(
+            aws_access_key_id, aws_secret_access_key)
     return ec2c
+
 
 def current_instance(aws_access_key=None, aws_secret_key=None, region=None):
     if aws_access_key is None:
@@ -45,6 +49,7 @@ def current_instance(aws_access_key=None, aws_secret_key=None, region=None):
     except IndexError:
         return None
 
+
 def instances_from_security_group(
     group_name,
     region=None,
@@ -57,7 +62,7 @@ def instances_from_security_group(
         aws_secret_key = os.environ['AWS_SECRET_KEY']
 
     ec2c = connection(aws_access_key, aws_secret_key, region)
-    sg   = ec2c.get_all_security_groups( groupnames=[group_name] )[0]
+    sg = ec2c.get_all_security_groups(groupnames=[group_name])[0]
     return sg.instances()
 
 
@@ -76,7 +81,7 @@ def hosts_from_security_group(
         aws_access_key,
         aws_secret_key
     ):
-        if i.state!='running':
+        if i.state != 'running':
             if display:
                 print "Skipping", i.private_dns_name, "(not running)"
             continue
@@ -94,11 +99,11 @@ def flip_elb_to(elb_name, instance_ids, instance_check=None, region=None):
     Flip the ELB to point to the new instances, returning the list of
     its previous instance ids.
     """
-    
     aws_access_key = os.environ['AWS_ACCESS_KEY']
     aws_secret_key = os.environ['AWS_SECRET_KEY']
     ec2c = connection(aws_access_key, aws_secret_key, region)
-    elbc = boto.ec2.elb.ELBConnection(aws_access_key, aws_secret_key, region=ec2c.region)
+    elbc = boto.ec2.elb.ELBConnection(
+        aws_access_key, aws_secret_key, region=ec2c.region)
     bh = elbc.get_all_load_balancers(elb_name)[0]
     old_instance_ids = map(lambda x: x.id, bh.instances)
     bh.register_instances(instance_ids)
@@ -107,9 +112,9 @@ def flip_elb_to(elb_name, instance_ids, instance_check=None, region=None):
             elb_name,
             instances=instance_ids
             )
-        if len(filter(lambda x: x.state!=u'InService', ih))==0:
+        if len(filter(lambda x: x.state != u'InService', ih)) == 0:
             if instance_check is None or \
-                    len(filter(instance_check, instance_ids))==0:
+                    len(filter(instance_check, instance_ids)) == 0:
                 break
         # this usually takes 10-15 seconds minimum
         time.sleep(5)
@@ -126,11 +131,10 @@ def flip_elb_to_security_group(
     Flip the ELB to all instances in a given security group.
     Return the instance ids previously registered with the ELB.
     """
-
     instances = hosts_from_security_group(security_group, region=region)
     return flip_elb_to(
         elb_name,
-        [i.id for i in instances if i.state=='running'],
+        [i.id for i in instances if i.state == 'running'],
         instance_check,
         region=None,
     )
@@ -141,13 +145,14 @@ def hosts_from_elb(elb_name, region=None):
     aws_secret_key = os.environ['AWS_SECRET_KEY']
 
     ec2c = connection(aws_access_key, aws_secret_key, region)
-    elbc = boto.ec2.elb.ELBConnection(aws_access_key, aws_secret_key, region=ec2c.region)
+    elbc = boto.ec2.elb.ELBConnection(
+        aws_access_key, aws_secret_key, region=ec2c.region)
     bh = elbc.get_all_load_balancers(elb_name)[0]
-    rs = ec2c.get_all_instances(instance_ids=map(lambda x:x.id, bh.instances))
+    rs = ec2c.get_all_instances(instance_ids=map(lambda x: x.id, bh.instances))
     elb_hosts = []
     for r in rs:
         for i in r.instances:
-            if i.state!='running':
+            if i.state != 'running':
                 continue
             elb_hosts.append(i.public_dns_name)
     return elb_hosts
@@ -162,7 +167,7 @@ def hosts_by_instance_id(ids, region=None):
     hosts = []
     for r in reservations:
         for i in r.instances:
-            if i.state!='running':
+            if i.state != 'running':
                 continue
             hosts.append(i.public_dns_name)
     return hosts
