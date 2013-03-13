@@ -93,7 +93,7 @@ def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketp
 def _get_extra_headers(path):
     _, extension = os.path.splitext(path)
     if extension == ".woff":
-        yield "Content-Type", "application/x-font-woff"
+        yield "Content-Type", "application/font-woff"
     elif extension == ".ttf":
         yield "Content-Type", "font/truetype"
     elif extension == ".eot":
