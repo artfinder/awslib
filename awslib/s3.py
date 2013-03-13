@@ -90,6 +90,18 @@ def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketp
         public=public)
 
 
+def _get_extra_headers(path):
+    _, extension = os.path.splitext(path)
+    if extension == ".woff":
+        yield "Content-Type", "application/x-font-woff"
+    elif extension == ".ttf":
+        yield "Content-Type", "font/truetype"
+    elif extension == ".eot":
+        yield "Content-Type", "application/vnd.ms-fontobject"
+    elif extension == ".otf":
+        yield "Content-Type", "font/opentype"
+
+
 def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', public=True):
     "Upload a single file to S3."
     
@@ -103,12 +115,13 @@ def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', pu
                 k.key = os.path.join(bucketprefix, fname)
             else:
                 k.key = keyname
+            headers = {'Cache-Control': 'max-age=%s' % TTL}
+            for header, value in _get_extra_headers(k.key):
+                headers[header] = value
             k.set_contents_from_filename(
                 os.path.join(base, fname),
                 replace=True,
-                headers={
-                    'Cache-Control': 'max-age=%s' % TTL
-                },
+                headers=headers,
             )
             if public:
                 k.set_acl('public-read')
