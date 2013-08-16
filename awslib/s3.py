@@ -14,16 +14,17 @@ from boto.s3.key import Key
 def upload_directory(dirname, bucketname):
     upload_directory_to_bucket_by_name(dirname, "", bucketname)
 
+
 def parallel_upload_directory(dirname, bucketname):
     parallel_upload_directory_to_bucket(dirname, "", bucketname)
 
-def upload_directory_to_bucket_by_name(base, dirname, bucketname, bucketprefix=''):
+
+def upload_directory_to_bucket_by_name(base, dirname, bucketname,
+                                       bucketprefix=''):
     "Upload an entire directory to S3."
-    
     aws_access_key = os.environ['AWS_ACCESS_KEY']
     aws_secret_key = os.environ['AWS_SECRET_KEY']
-    
-    s3     = S3Connection(aws_access_key, aws_secret_key)
+    s3 = S3Connection(aws_access_key, aws_secret_key)
     bucket = s3.get_bucket(bucketname)
     upload_directory_to_bucket(base, dirname, bucket, bucketprefix)
 
@@ -34,21 +35,23 @@ def upload_directory_to_bucket(base, dirname, bucket, bucketprefix=''):
         if os.path.isdir(os.path.join(base, fname)):
             upload_directory_to_bucket(base, fname, bucket, bucketprefix)
         else:
-            upload_file_to_bucket(base, fname, bucket, bucketprefix=bucketprefix)
+            upload_file_to_bucket(
+                base, fname, bucket, bucketprefix=bucketprefix)
+
 
 def pool_upload(args):
     bucket_conns = threading.current_thread().local.bucket_conns
     bucket = bucket_conns[os.getpid()][args[2]]
     upload_file_to_bucket(args[0], args[1], bucket, bucketprefix=args[3])
 
+
 def pool_init(bucketname):
     aws_access_key = os.environ['AWS_ACCESS_KEY']
     aws_secret_key = os.environ['AWS_SECRET_KEY']
-    
-    s3     = S3Connection(aws_access_key, aws_secret_key)
+    s3 = S3Connection(aws_access_key, aws_secret_key)
     bucket = s3.get_bucket(bucketname)
-   
-    try:    
+
+    try:
         tlocal = threading.current_thread().local
     except AttributeError:
         tlocal = threading.current_thread().local = threading.local()
@@ -60,30 +63,36 @@ def pool_init(bucketname):
 
     bucket_conns.setdefault(os.getpid(), {})[bucketname] = bucket
 
-def parallel_upload_directory_to_bucket(base, dirname, bucket, bucketprefix=''):
+
+def parallel_upload_directory_to_bucket(base, dirname, bucket,
+                                        bucketprefix=''):
     pool = multiprocessing.pool.ThreadPool(
             processes=32,
             initializer=pool_init,
             initargs=(bucket,))
-  
+
     def walk_files(path):
         for root, dirs, files in os.walk(path):
             for f in files:
                 yield os.path.join(root[len(path):], f)
 
     pool.map(pool_upload,
-            ((base, f, bucket, bucketprefix) for f in walk_files(os.path.join(base, dirname))),
+            ((base, f, bucket, bucketprefix) for f in walk_files(
+                os.path.join(base, dirname))),
             10)
 
-def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None, bucketprefix='', public=True, aws_access_key=None, aws_secret_key=None):
+
+def upload_file_to_bucket_by_name(base, fname, bucketname, keyname=None,
+                                  bucketprefix='', public=True,
+                                  aws_access_key=None, aws_secret_key=None):
     "Upload a single file to S3."
-    
+
     if aws_access_key is None:
         aws_access_key = os.environ['AWS_ACCESS_KEY']
     if aws_secret_key is None:
         aws_secret_key = os.environ['AWS_SECRET_KEY']
-    
-    s3     = S3Connection(aws_access_key, aws_secret_key)
+
+    s3 = S3Connection(aws_access_key, aws_secret_key)
     bucket = s3.get_bucket(bucketname)
     upload_file_to_bucket(
         base, fname, bucket, keyname=keyname, bucketprefix=bucketprefix,
@@ -102,11 +111,12 @@ def _get_extra_headers(path):
         yield "Content-Type", "font/opentype"
 
 
-def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', public=True):
+def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='',
+                          public=True):
     "Upload a single file to S3."
-    
+
     TTL = 31536000      # one year
-    
+
     print "Uploading %40.40s" % fname,
     while True:
         try:
@@ -127,7 +137,7 @@ def upload_file_to_bucket(base, fname, bucket, keyname=None, bucketprefix='', pu
                 k.set_acl('public-read')
             print "done."
             break
-        except Exception, e:
+        except Exception:
             import traceback
             print "FAILED, retrying in 10."
             traceback.print_exc()
