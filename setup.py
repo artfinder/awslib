@@ -10,7 +10,7 @@ VERSION = '0.6.7'
 setup(
     name=PACKAGE, version=VERSION,
     description="Small library providing Amazon Web Services utility functions on top of boto",
-    packages=[ 'awslib' ],
+    packages=['awslib'],
     license='MIT',
     author='Art Discovery Ltd',
     maintainer='Art Discovery Ltd',
